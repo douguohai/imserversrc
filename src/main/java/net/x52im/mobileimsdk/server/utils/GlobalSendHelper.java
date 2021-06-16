@@ -40,8 +40,7 @@ public class GlobalSendHelper {
         if (ServerLauncher.bridgeEnabled && !OnlineProcessor.isOnline(pFromClient.getTo())) {
             logger.debug("[IMCORE-{}<C2C>-桥接↑]>> 客户端{}不在线，数据[from:{},fp:{},to:{},content:{}] 将通过MQ直发Web服务端" +
                             "（彼时在线则通过web实时发送、否则通过Web端进行离线存储）【第一阶段APP+WEB跨机通信算法】！"
-                    , Gateway.$(session), pFromClient.getTo(), pFromClient.getFrom(), pFromClient.getFp()
-                    , pFromClient.getTo(), pFromClient.getDataContent());
+                    , Gateway.$(session), pFromClient.getTo(), pFromClient.getFrom(), pFromClient.getFp(), pFromClient.getTo(), pFromClient.getDataContent());
 
             if (pFromClient.isQoS() && QoS4ReciveDaemonC2S.getInstance().hasRecieved(pFromClient.getFp())) {
                 needDelegateACK = true;

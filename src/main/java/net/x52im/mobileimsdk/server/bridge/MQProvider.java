@@ -62,8 +62,7 @@ public class MQProvider {
         this(mqURI, publishToQueue, consumFromQueue, null, null, TAG, publishTrayAgainEnable);
     }
 
-    public MQProvider(String mqURI, String publishToQueue, String consumFromQueue
-            , String encodeCharset, String decodeCharset, String TAG
+    public MQProvider(String mqURI, String publishToQueue, String consumFromQueue, String encodeCharset, String decodeCharset, String TAG
             , boolean publishTrayAgainEnable) {
         this.mqURI = mqURI;
         this.publishToQueue = publishToQueue;
@@ -118,6 +117,7 @@ public class MQProvider {
             try {
                 _connection = _factory.newConnection();
                 _connection.addShutdownListener(new ShutdownListener() {
+                    @Override
                     public void shutdownCompleted(ShutdownSignalException cause) {
                         logger.warn("[" + TAG + "] - 连接已经关闭了。。。。【NO】");
                     }
@@ -162,10 +162,10 @@ public class MQProvider {
                 if (conn != null) {
                     whenConnected(conn);
                 } else {
-                    logger.error("[" + TAG + "-↑] - [start()中]【严重】connction还没有准备好" +
-                            "，conn.createChannel()失败，start()没有继续！(原因：connction==null)【5秒后重新尝试start】");
+                    logger.error("[" + TAG + "-↑] - [start()中]【严重】connction还没有准备好" + "，conn.createChannel()失败，start()没有继续！(原因：connction==null)【5秒后重新尝试start】");
 
                     timerForStartAgain.schedule(new TimerTask() {
+                        @Override
                         public void run() {
                             start();
                         }
@@ -307,6 +307,7 @@ public class MQProvider {
                     "出错了，本次startWorker没有继续【暂停5秒后重试startWorker()】！", e);
 
             this.timerForRetryWorker.schedule(new TimerTask() {
+                @Override
                 public void run() {
                     startWorker(MQProvider.this._connection);
                 }

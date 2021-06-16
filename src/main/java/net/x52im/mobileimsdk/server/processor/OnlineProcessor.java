@@ -25,10 +25,16 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * 在线用户处理
+ */
 public class OnlineProcessor {
 
     public final static String USER_ID_IN_SESSION_ATTRIBUTE = "__user_id__";
 
+    /**
+     * netty 中channel 的属性对象
+     */
     public static final AttributeKey<String> USER_ID_IN_SESSION_ATTRIBUTE_ATTR = AttributeKey.newInstance(USER_ID_IN_SESSION_ATTRIBUTE);
 
     public static boolean DEBUG = false;
@@ -42,6 +48,11 @@ public class OnlineProcessor {
      */
     private ConcurrentMap<String, Channel> onlineSessions = new ConcurrentHashMap<String, Channel>();
 
+    /**
+     * 单例
+     *
+     * @return
+     */
     public static OnlineProcessor getInstance() {
         if (instance == null) {
             instance = new OnlineProcessor();
@@ -80,7 +91,7 @@ public class OnlineProcessor {
     }
 
     /**
-     * 涮出用户
+     * 根据用户id删除用户
      *
      * @param user_id
      * @return
@@ -91,11 +102,18 @@ public class OnlineProcessor {
                 logger.warn("[IMCORE]！用户id={}不存在在线列表中，本次removeUser没有继续.", user_id);
                 __printOnline();// just for debug
                 return false;
-            } else
+            } else {
                 return (onlineSessions.remove(user_id) != null);
+            }
         }
     }
 
+    /**
+     * 根据用户id，获取对应的netty链接
+     *
+     * @param user_id
+     * @return
+     */
     public Channel getOnlineSession(String user_id) {
         if (user_id == null) {
             logger.warn("[IMCORE][CAUTION] getOnlineSession时，作为key的user_id== null.");
@@ -105,14 +123,27 @@ public class OnlineProcessor {
         return onlineSessions.get(user_id);
     }
 
+
     public ConcurrentMap<String, Channel> getOnlineSessions() {
         return onlineSessions;
     }
 
+    /**
+     * 判断当前用户是否登陆
+     *
+     * @param session
+     * @return
+     */
     public static boolean isLogined(Channel session) {
         return session != null && getUserIdFromSession(session) != null;
     }
 
+    /**
+     * 从session中获取用户id
+     *
+     * @param session
+     * @return
+     */
     public static String getUserIdFromSession(Channel session) {
         Object attr = null;
         if (session != null) {
@@ -123,6 +154,12 @@ public class OnlineProcessor {
         return null;
     }
 
+    /**
+     * 判断当前用户是否在线
+     *
+     * @param userId
+     * @return
+     */
     public static boolean isOnline(String userId) {
         return OnlineProcessor.getInstance().getOnlineSession(userId) != null;
     }
