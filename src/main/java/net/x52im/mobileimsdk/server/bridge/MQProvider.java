@@ -130,6 +130,16 @@ public class MQProvider {
 
                         start();
                     }
+
+                    @Override
+                    public void handleRecoveryStarted(Recoverable recoverable) {
+
+                    }
+
+                    @Override
+                    public void handleTopologyRecoveryStarted(Recoverable recoverable) {
+
+                    }
                 });
             } catch (Exception e) {
                 logger.error("[" + TAG + "] - 【NO】getConnection()时出错了，原因是：" + e.getMessage(), e);
