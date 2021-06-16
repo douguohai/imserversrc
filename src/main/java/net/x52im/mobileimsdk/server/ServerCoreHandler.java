@@ -35,9 +35,11 @@ public class ServerCoreHandler {
     private static Logger logger = LoggerFactory.getLogger(ServerCoreHandler.class);
 
     protected ServerEventListener serverEventListener = null;
+
     protected MessageQoSEventListenerS2C serverMessageQoSEventListener = null;
 
     protected LogicProcessor logicProcessor = null;
+
     protected BridgeProcessor bridgeProcessor = null;
 
     public ServerCoreHandler() {
@@ -73,11 +75,17 @@ public class ServerCoreHandler {
     }
 
     public void exceptionCaught(Channel session, Throwable cause) throws Exception {
-        logger.debug("[IMCORE-" + Gateway.$(session) + "]此客户端的Channel抛出了exceptionCaught，原因是："
-                + cause.getMessage() + "，可以提前close掉了哦！", cause);
+        logger.debug("[IMCORE-" + Gateway.$(session) + "]此客户端的Channel抛出了exceptionCaught，原因是：" + cause.getMessage() + "，可以提前close掉了哦！", cause);
         session.close();
     }
 
+    /**
+     * 处理服务端接收到消息逻辑
+     *
+     * @param session
+     * @param bytebuf
+     * @throws Exception
+     */
     public void messageReceived(Channel session, ByteBuf bytebuf) throws Exception {
         Protocal pFromClient = ServerToolKits.fromIOBuffer(bytebuf);
         String remoteAddress = ServerToolKits.clientInfoToString(session);
@@ -106,8 +114,7 @@ public class ServerCoreHandler {
                     if ("0".equals(pFromClient.getTo())) {
                         logicProcessor.processC2SMessage(session, pFromClient, remoteAddress);
                     } else {
-                        logicProcessor.processC2CMessage(bridgeProcessor, session
-                                , pFromClient, remoteAddress);
+                        logicProcessor.processC2CMessage(bridgeProcessor, session, pFromClient, remoteAddress);
                     }
                 } else {
                     logger.warn("[IMCORE-{}]<< 收到客户端{}的通用数据传输消息，但回调对象是null，回调无法继续.", Gateway.$(session), remoteAddress);

@@ -31,16 +31,48 @@ public class QoS4ReciveDaemonRoot {
     private static Logger logger = LoggerFactory.getLogger(QoS4ReciveDaemonRoot.class);
 
     private boolean DEBUG = false;
-    private int CHECH_INTERVAL = 5 * 60 * 1000; // 5分钟
+    /**
+     * 定时检查时间5分钟
+     */
+    private int CHECH_INTERVAL = 5 * 60 * 1000;
+
+    /**
+     *
+     */
     private int MESSAGES_VALID_TIME = 10 * 60 * 1000; // 10分钟
+
+    /**
+     *
+     */
     private ConcurrentMap<String, Long> recievedMessages = new ConcurrentHashMap<String, Long>();
+
+    /**
+     * 定时器
+     */
     private Timer timer = null;
+
+
     private Runnable runnable = null;
+
+    /**
+     * 是否在执行
+     */
     private boolean _excuting = false;
+
+    /**
+     * debug 标记
+     */
     private String debugTag = "";
 
-    public QoS4ReciveDaemonRoot(int CHECH_INTERVAL, int MESSAGES_VALID_TIME
-            , boolean DEBUG, String debugTag) {
+    /**
+     * 构造函数
+     *
+     * @param CHECH_INTERVAL
+     * @param MESSAGES_VALID_TIME
+     * @param DEBUG
+     * @param debugTag
+     */
+    public QoS4ReciveDaemonRoot(int CHECH_INTERVAL, int MESSAGES_VALID_TIME, boolean DEBUG, String debugTag) {
         if (CHECH_INTERVAL > 0) {
             this.CHECH_INTERVAL = CHECH_INTERVAL;
         }
@@ -51,6 +83,9 @@ public class QoS4ReciveDaemonRoot {
         this.debugTag = debugTag;
     }
 
+    /**
+     * 执行任务
+     */
     private void doTaskOnece() {
         if (!_excuting) {
             _excuting = true;
@@ -69,8 +104,7 @@ public class QoS4ReciveDaemonRoot {
                 long delta = System.currentTimeMillis() - value;
                 if (delta >= MESSAGES_VALID_TIME) {
                     if (DEBUG) {
-                        logger.debug("【IMCORE" + this.debugTag + "】【QoS接收方】指纹为" + key + "的包已生存" + delta
-                                + "ms(最大允许" + MESSAGES_VALID_TIME + "ms), 马上将删除之.");
+                        logger.debug("【IMCORE" + this.debugTag + "】【QoS接收方】指纹为" + key + "的包已生存" + delta + "ms(最大允许" + MESSAGES_VALID_TIME + "ms), 马上将删除之.");
                     }
                     recievedMessages.remove(key);
                 }

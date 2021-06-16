@@ -93,26 +93,21 @@ public class ProtocalFactory {
         return parse(dataContentOfProtocal, PLoginInfoResponse.class);
     }
 
-    public static Protocal createCommonData(String dataContent, String from_user_id, String to_user_id
-            , boolean QoS, String fingerPrint) {
+    public static Protocal createCommonData(String dataContent, String from_user_id, String to_user_id, boolean QoS, String fingerPrint) {
         return createCommonData(dataContent, from_user_id, to_user_id, QoS, fingerPrint, -1);
     }
 
-    public static Protocal createCommonData(String dataContent, String from_user_id, String to_user_id
-            , boolean QoS, String fingerPrint, int typeu) {
-        return new Protocal(ProtocalType.C.FROM_CLIENT_TYPE_OF_COMMON$DATA
-                , dataContent, from_user_id, to_user_id, QoS, fingerPrint, typeu);
+    public static Protocal createCommonData(String dataContent, String from_user_id, String to_user_id, boolean QoS, String fingerPrint, int typeu) {
+        return new Protocal(ProtocalType.C.FROM_CLIENT_TYPE_OF_COMMON$DATA, dataContent, from_user_id, to_user_id, QoS, fingerPrint, typeu);
     }
 
-    public static Protocal createRecivedBack(String from_user_id, String to_user_id
-            , String recievedMessageFingerPrint) {
+    public static Protocal createRecivedBack(String from_user_id, String to_user_id, String recievedMessageFingerPrint) {
         return createRecivedBack(from_user_id, to_user_id, recievedMessageFingerPrint, false);
     }
 
-    public static Protocal createRecivedBack(String from_user_id, String to_user_id
-            , String recievedMessageFingerPrint, boolean bridge) {
-        Protocal p = new Protocal(ProtocalType.C.FROM_CLIENT_TYPE_OF_RECIVED
-                , recievedMessageFingerPrint, from_user_id, to_user_id);// 该包当然不需要QoS支持！
+    public static Protocal createRecivedBack(String fromUserId, String toUserId, String recievedMessageFingerPrint, boolean bridge) {
+        // 该包当然不需要QoS支持！
+        Protocal p = new Protocal(ProtocalType.C.FROM_CLIENT_TYPE_OF_RECIVED, recievedMessageFingerPrint, fromUserId, toUserId);
         p.setBridge(bridge);
         return p;
     }

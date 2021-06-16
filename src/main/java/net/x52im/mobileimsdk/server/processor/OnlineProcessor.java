@@ -26,43 +26,65 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class OnlineProcessor {
+
     public final static String USER_ID_IN_SESSION_ATTRIBUTE = "__user_id__";
-    public static final AttributeKey<String> USER_ID_IN_SESSION_ATTRIBUTE_ATTR =
-            AttributeKey.newInstance(USER_ID_IN_SESSION_ATTRIBUTE);
+
+    public static final AttributeKey<String> USER_ID_IN_SESSION_ATTRIBUTE_ATTR = AttributeKey.newInstance(USER_ID_IN_SESSION_ATTRIBUTE);
+
     public static boolean DEBUG = false;
+
     private static Logger logger = LoggerFactory.getLogger(OnlineProcessor.class);
+
     private static OnlineProcessor instance = null;
 
+    /**
+     * 线上用户集合
+     */
     private ConcurrentMap<String, Channel> onlineSessions = new ConcurrentHashMap<String, Channel>();
 
     public static OnlineProcessor getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new OnlineProcessor();
+        }
         return instance;
     }
 
     private OnlineProcessor() {
     }
 
+    /**
+     * 新增用户
+     *
+     * @param user_id
+     * @param session
+     */
     public void putUser(String user_id, Channel session) {
         if (onlineSessions.containsKey(user_id)) {
-            logger.debug("[IMCORE-{}]【注意】用户id={}已经在在线列表中了，session也是同一个吗？{}"
-                    , Gateway.$(session), user_id, (onlineSessions.get(user_id).hashCode() == session.hashCode()));
-
+            logger.debug("[IMCORE-{}]【注意】用户id={}已经在在线列表中了，session也是同一个吗？{}", Gateway.$(session), user_id, (onlineSessions.get(user_id).hashCode() == session.hashCode()));
             // TODO 同一账号的重复登陆情况可在此展开处理逻辑
         }
         onlineSessions.put(user_id, session);
         __printOnline();// just for debug
     }
 
+    /**
+     * 输出单机下的用户列表
+     */
     public void __printOnline() {
         logger.debug("【@】当前在线用户共(" + onlineSessions.size() + ")人------------------->");
         if (DEBUG) {
-            for (String key : onlineSessions.keySet())
+            for (String key : onlineSessions.keySet()) {
                 logger.debug("      > user_id=" + key + ",session=" + onlineSessions.get(key).remoteAddress());
+            }
         }
     }
 
+    /**
+     * 涮出用户
+     *
+     * @param user_id
+     * @return
+     */
     public boolean removeUser(String user_id) {
         synchronized (onlineSessions) {
             if (!onlineSessions.containsKey(user_id)) {

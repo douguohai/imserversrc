@@ -36,8 +36,7 @@ import org.slf4j.LoggerFactory;
 public class LocalSendHelper {
     private static Logger logger = LoggerFactory.getLogger(ServerCoreHandler.class);
 
-    public static void sendData(String to_user_id
-            , String dataContent, MBObserver resultObserver) throws Exception {
+    public static void sendData(String to_user_id, String dataContent, MBObserver resultObserver) throws Exception {
         sendData(to_user_id, dataContent, true, null, -1, resultObserver);
     }
 
@@ -46,23 +45,21 @@ public class LocalSendHelper {
         sendData(to_user_id, dataContent, true, null, typeu, resultObserver);
     }
 
-    public static void sendData(String to_user_id, String dataContent
-            , boolean QoS, int typeu, MBObserver resultObserver) throws Exception {
+    public static void sendData(String to_user_id, String dataContent, boolean QoS, int typeu, MBObserver resultObserver) throws Exception {
         sendData(to_user_id, dataContent, QoS, null, typeu, resultObserver);
     }
 
-    public static void sendData(String to_user_id, String dataContent
-            , boolean QoS, String fingerPrint, MBObserver resultObserver) throws Exception {
+    public static void sendData(String to_user_id, String dataContent, boolean QoS, String fingerPrint, MBObserver resultObserver) throws Exception {
         sendData(to_user_id, dataContent, QoS, fingerPrint, -1, resultObserver);
     }
 
-    public static void sendData(String to_user_id, String dataContent
-            , boolean QoS, String fingerPrint, int typeu, MBObserver resultObserver) throws Exception {
+    public static void sendData(String to_user_id, String dataContent, boolean QoS, String fingerPrint, int typeu, MBObserver resultObserver) throws Exception {
         sendData(ProtocalFactory.createCommonData(dataContent, "0", to_user_id, QoS, fingerPrint, typeu), resultObserver);
     }
 
     public static void sendData(Protocal p, MBObserver resultObserver) throws Exception {
         if (p != null) {
+            //处理接收端为非系统端的消息
             if (!"0".equals(p.getTo())) {
                 sendData(OnlineProcessor.getInstance().getOnlineSession(p.getTo()), p, resultObserver);
             } else {
@@ -80,13 +77,12 @@ public class LocalSendHelper {
 
     public static void sendData(final Channel session, final Protocal p, final MBObserver resultObserver) throws Exception {
         if (session == null) {
-            logger.info("[IMCORE-{}]toSession==null >> id={}的用户尝试发给客户端{}的消息：str={}因接收方的id已不在线，此次实时发送没有继续(此消息应考虑作离线处理哦)."
-                    , Gateway.$(session), p.getFrom(), p.getTo(), p.getDataContent());
+            logger.info("[IMCORE-{}]toSession==null >> id={}的用户尝试发给客户端{}的消息：str={}因接收方的id已不在线，此次实时发送没有继续(此消息应考虑作离线处理哦).", Gateway.$(session), p.getFrom(), p.getTo(), p.getDataContent());
         } else {
             if (session.isActive()) {
                 if (p != null) {
                     final byte[] res = p.toBytes();
-
+                    //同步进行消息推送
                     ByteBuf to = Unpooled.copiedBuffer(res);
                     ChannelFuture cf = session.writeAndFlush(to);//.sync();
 
@@ -96,10 +92,8 @@ public class LocalSendHelper {
                                 QoS4SendDaemonS2C.getInstance().put(p);
                             }
                         } else {
-                            logger.warn("[IMCORE-{}]给客户端：{}的数据->{},发送失败！[{}](此消息应考虑作离线处理哦)."
-                                    , Gateway.$(session), ServerToolKits.clientInfoToString(session), p.toGsonString(), res.length);
+                            logger.warn("[IMCORE-{}]给客户端：{}的数据->{},发送失败！[{}](此消息应考虑作离线处理哦).", Gateway.$(session), ServerToolKits.clientInfoToString(session), p.toGsonString(), res.length);
                         }
-
                         if (resultObserver != null) {
                             resultObserver.update(future.isSuccess(), null);
                         }
@@ -111,8 +105,7 @@ public class LocalSendHelper {
                     return;
                     // ## Bug FIX: 20171226 by JS END
                 } else {
-                    logger.warn("[IMCORE-{}]客户端id={}要发给客户端{}的实时消息：str={}没有继续(此消息应考虑作离线处理哦)."
-                            , Gateway.$(session), p.getFrom(), p.getTo(), p.getDataContent());
+                    logger.warn("[IMCORE-{}]客户端id={}要发给客户端{}的实时消息：str={}没有继续(此消息应考虑作离线处理哦).", Gateway.$(session), p.getFrom(), p.getTo(), p.getDataContent());
                 }
             }
         }
@@ -127,15 +120,11 @@ public class LocalSendHelper {
                 , Gateway.$(session), ServerToolKits.clientInfoToString(session), p.getDataContent());
 
         if (resultObserver == null) {
-            resultObserver = new MBObserver() {
-                @Override
-                public void update(boolean sendOK, Object extraObj) {
-                    logger.warn("[IMCORE-{}]>> 客户端{}未登陆，服务端反馈发送成功？{}（会话即将关闭）"
-                            , Gateway.$(session), ServerToolKits.clientInfoToString(session), sendOK);
+            resultObserver = (sendOK, extraObj) -> {
+                logger.warn("[IMCORE-{}]>> 客户端{}未登陆，服务端反馈发送成功？{}（会话即将关闭）", Gateway.$(session), ServerToolKits.clientInfoToString(session), sendOK);
 
-                    if (!GatewayUDP.isUDPChannel(session)) {
-                        session.close();
-                    }
+                if (!GatewayUDP.isUDPChannel(session)) {
+                    session.close();
                 }
             };
         }

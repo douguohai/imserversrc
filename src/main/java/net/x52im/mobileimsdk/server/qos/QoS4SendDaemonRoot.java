@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2020  即时通讯网(52im.net) & Jack Jiang.
- * The MobileIMSDK v5.x Project.
- * All rights reserved.
- *
- * > Github地址：https://github.com/JackJiang2011/MobileIMSDK
- * > 文档地址：  http://www.52im.net/forum-89-1.html
- * > 技术社区：  http://www.52im.net/
- * > 技术交流群：320837163 (http://www.52im.net/topic-qqgroup.html)
- * > 作者公众号：“【即时通讯技术圈】”，欢迎关注！
- * > 联系作者：  http://www.52im.net/thread-2792-1-1.html
- *
- * "即时通讯网(52im.net) - 即时通讯开发者社区!" 推荐开源工程。
- *
- * QoS4SendDaemonRoot.java at 2020-8-22 16:00:59, code by Jack Jiang.
- */
 package net.x52im.mobileimsdk.server.qos;
 
 import net.x52im.mobileimsdk.server.ServerLauncher;
@@ -32,24 +16,59 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+/**
+ * S2C模式中QoS数据包质量包证机制之发送队列保证实现类.
+ * 本类是QoS机制的核心，目的是加强保证TCP协议在应用层的可靠性和送达率。
+ */
 public class QoS4SendDaemonRoot {
     private static Logger logger = LoggerFactory.getLogger(QoS4SendDaemonRoot.class);
 
     private boolean DEBUG = false;
+
     private ServerLauncher serverLauncher = null;
+
+    /**
+     * 待发送的消息集合
+     */
     private ConcurrentSkipListMap<String, Protocal> sentMessages = new ConcurrentSkipListMap<String, Protocal>();
+
+    /**
+     * 消息的唯一id和服务端接收到当前消息的时间映射
+     */
     private ConcurrentMap<String, Long> sendMessagesTimestamp = new ConcurrentHashMap<String, Long>();
+
+    /**
+     * 检查间隔
+     */
     private int CHECH_INTERVAL = 5000;
+
+    /**
+     * 设置重复发送时间，防止这边发送消息后，对方回调还没过来，服务端这边进行了再次发送
+     */
     private int MESSAGES_JUST$NOW_TIME = 2 * 1000;
+
+    /**
+     * 默认发送消息重试次数
+     */
     private int QOS_TRY_COUNT = 1;
+
+    /**
+     * 服务的助兴状态 true 在执行 false 不在执行
+     */
     private boolean _excuting = false;
     private Timer timer = null;
     private String debugTag = "";
 
-    public QoS4SendDaemonRoot(int CHECH_INTERVAL
-            , int MESSAGES_JUST$NOW_TIME
-            , int QOS_TRY_COUNT
-            , boolean DEBUG, String debugTag) {
+    /**
+     * 构造函数
+     *
+     * @param CHECH_INTERVAL         daemon线程的检查间隔时间
+     * @param MESSAGES_JUST$NOW_TIME
+     * @param QOS_TRY_COUNT          消息发送的重试次数
+     * @param DEBUG                  是否开启debug日志级别
+     * @param debugTag               日志标签
+     */
+    public QoS4SendDaemonRoot(int CHECH_INTERVAL, int MESSAGES_JUST$NOW_TIME, int QOS_TRY_COUNT, boolean DEBUG, String debugTag) {
         if (CHECH_INTERVAL > 0) {
             this.CHECH_INTERVAL = CHECH_INTERVAL;
         }
@@ -80,13 +99,15 @@ public class QoS4SendDaemonRoot {
                     final Protocal p = entry.getValue();
 
                     if (p != null && p.isQoS()) {
+                        //消息的重试次数超过设置的次数，不再尝试发送
                         if (p.getRetryCount() >= QOS_TRY_COUNT) {
                             if (DEBUG) {
                                 logger.debug("【IMCORE" + this.debugTag + "】【QoS发送方】指纹为" + p.getFp()
                                         + "的消息包重传次数已达" + p.getRetryCount() + "(最多" + QOS_TRY_COUNT + "次)上限，将判定为丢包！");
                             }
-
+                            //将对象放入发送失败消息集合中
                             lostMessages.add((Protocal) p.clone());
+                            //从待发送集合中删除该对象
                             remove(p.getFp());
                         } else {
                             //### 2015104 Bug Fix: 解决了无线网络延较大时，刚刚发出的消息在其应答包还在途中时被错误地进行重传
@@ -94,32 +115,25 @@ public class QoS4SendDaemonRoot {
                             long delta = System.currentTimeMillis() - (sendMessageTimestamp == null ? 0 : sendMessageTimestamp);
                             if (delta <= MESSAGES_JUST$NOW_TIME) {
                                 if (DEBUG) {
-                                    logger.warn("【IMCORE" + this.debugTag + "】【QoS发送方】指纹为" + key + "的包距\"刚刚\"发出才" + delta
-                                            + "ms(<=" + MESSAGES_JUST$NOW_TIME + "ms将被认定是\"刚刚\"), 本次不需要重传哦.");
+                                    logger.warn("【IMCORE" + this.debugTag + "】【QoS发送方】指纹为" + key + "的包距\"刚刚\"发出才" + delta + "ms(<=" + MESSAGES_JUST$NOW_TIME + "ms将被认定是\"刚刚\"), 本次不需要重传哦.");
                                 }
                             }
                             //### 2015103 Bug Fix END
                             else {
-                                MBObserver sendResultObserver = new MBObserver() {
-                                    @Override
-                                    public void update(boolean sendOK, Object extraObj) {
-                                        if (sendOK) {
-                                            if (DEBUG) {
-                                                logger.debug("【IMCORE" + debugTag + "】【QoS发送方】指纹为" + p.getFp()
-                                                        + "的消息包已成功进行重传，此次之后重传次数已达"
-                                                        + p.getRetryCount() + "(最多" + QOS_TRY_COUNT + "次).");
-                                            }
-                                        } else {
-                                            if (DEBUG) {
-                                                logger.warn("【IMCORE" + debugTag + "】【QoS发送方】指纹为" + p.getFp()
-                                                        + "的消息包重传失败，它的重传次数之前已累计为"
-                                                        + p.getRetryCount() + "(最多" + QOS_TRY_COUNT + "次).");
-                                            }
+                                MBObserver sendResultObserver = (sendOK, extraObj) -> {
+                                    if (sendOK) {
+                                        if (DEBUG) {
+                                            logger.debug("【IMCORE" + debugTag + "】【QoS发送方】指纹为" + p.getFp() + "的消息包已成功进行重传，此次之后重传次数已达" + p.getRetryCount() + "(最多" + QOS_TRY_COUNT + "次).");
+                                        }
+                                    } else {
+                                        if (DEBUG) {
+                                            logger.warn("【IMCORE" + debugTag + "】【QoS发送方】指纹为" + p.getFp() + "的消息包重传失败，它的重传次数之前已累计为" + p.getRetryCount() + "(最多" + QOS_TRY_COUNT + "次).");
                                         }
                                     }
                                 };
-
+                                //todo 调用发送机制 此处存在疑问，在什么什么谁后在待发送消息中将发送成功的消息删除掉
                                 LocalSendHelper.sendData(p, sendResultObserver);
+                                //消息的操作数量加1
                                 p.increaseRetryCount();
                             }
                         }
@@ -133,19 +147,32 @@ public class QoS4SendDaemonRoot {
                 }
             }
 
-            if (lostMessages != null && lostMessages.size() > 0)
+            if (lostMessages.size() > 0) {
                 notifyMessageLost(lostMessages);
+            }
 
             _excuting = false;
         }
     }
 
+    /**
+     * 将未送达信息反馈给消息监听者。
+     *
+     * @param lostMessages 未发送成功的消息的集合
+     */
     protected void notifyMessageLost(ArrayList<Protocal> lostMessages) {
         if (serverLauncher != null && serverLauncher.getServerMessageQoSEventListener() != null) {
+            //用户自定义的回调函数，这边调用
             serverLauncher.getServerMessageQoSEventListener().messagesLost(lostMessages);
         }
     }
 
+    /**
+     * 设置消息发送线程以后台形式启动
+     *
+     * @param immediately 定时检查时间
+     * @return 当前对象的引用
+     */
     public QoS4SendDaemonRoot startup(boolean immediately) {
         stop();
 
@@ -164,6 +191,10 @@ public class QoS4SendDaemonRoot {
         return this;
     }
 
+
+    /**
+     * 停止当前服务
+     */
     public void stop() {
         if (timer != null) {
             try {
@@ -174,29 +205,49 @@ public class QoS4SendDaemonRoot {
         }
     }
 
+    /**
+     * 判断消息发送服务是否在运行
+     *
+     * @return true 在运行 false 不在运行
+     */
     public boolean isRunning() {
         return timer != null;
     }
 
+
+    /**
+     * 判断当前消息是否存在
+     *
+     * @param fingerPrint 消息的唯一id
+     * @return true 存在 false 不存在
+     */
     public boolean exist(String fingerPrint) {
         return sentMessages.get(fingerPrint) != null;
     }
 
+    /**
+     * 将刚接收到的消息push进入待发送集合中，禁行发送
+     *
+     * @param p 协议消息
+     */
     public void put(Protocal p) {
         if (p == null) {
-            if (DEBUG)
+            if (DEBUG) {
                 logger.warn(this.debugTag + "Invalid arg p==null.");
+            }
             return;
         }
         if (p.getFp() == null) {
-            if (DEBUG)
+            if (DEBUG) {
                 logger.warn(this.debugTag + "Invalid arg p.getFp() == null.");
+            }
             return;
         }
 
         if (!p.isQoS()) {
-            if (DEBUG)
+            if (DEBUG) {
                 logger.warn(this.debugTag + "This protocal is not QoS pkg, ignore it!");
+            }
             return;
         }
 
@@ -210,20 +261,32 @@ public class QoS4SendDaemonRoot {
         sendMessagesTimestamp.put(p.getFp(), System.currentTimeMillis());
     }
 
+    /**
+     * 根据消息的唯一id，从待发送消息的集合中删除消息
+     *
+     * @param fingerPrint 消息的唯一id
+     */
     public void remove(final String fingerPrint) {
         try {
             // remove it
             sendMessagesTimestamp.remove(fingerPrint);
             Object result = sentMessages.remove(fingerPrint);
-            if (DEBUG)
+            if (DEBUG) {
                 logger.warn("【IMCORE" + this.debugTag + "】【QoS发送方】指纹为" + fingerPrint + "的消息已成功从发送质量保证队列中移除(可能是收到接收方的应答也可能是达到了重传的次数上限)，重试次数="
                         + (result != null ? ((Protocal) result).getRetryCount() : "none呵呵."));
+            }
         } catch (Exception e) {
-            if (DEBUG)
+            if (DEBUG) {
                 logger.warn("【IMCORE" + this.debugTag + "】【QoS发送方】remove(fingerPrint)时出错了：", e);
+            }
         }
     }
 
+    /**
+     * 待发送消息集合的大小
+     *
+     * @return 消息数量
+     */
     public int size() {
         return sentMessages.size();
     }
@@ -232,6 +295,12 @@ public class QoS4SendDaemonRoot {
         this.serverLauncher = serverLauncher;
     }
 
+    /**
+     * 设置调试状态 true 设置为打出日志 false 不输出日志
+     *
+     * @param debugable 是否输出日志
+     * @return
+     */
     public QoS4SendDaemonRoot setDebugable(boolean debugable) {
         this.DEBUG = debugable;
         return this;

@@ -26,8 +26,12 @@ package net.x52im.mobileimsdk.server.protocal;
  * @version 1.0
  */
 public interface ProtocalType {
-    //------------------------------------------------------- from client
-    public interface C {
+
+
+    /**
+     * 客户端通讯协议状态码
+     */
+    interface C {
         /**
          * 由客户端发出 - 协议类型：客户端登陆
          */
@@ -56,8 +60,11 @@ public interface ProtocalType {
         int FROM_CLIENT_TYPE_OF_ECHO = 5;
     }
 
-    //------------------------------------------------------- from server
-    public interface S {
+
+    /**
+     * 服务端通讯协议状态码
+     */
+    interface S {
         /**
          * 由服务端发出 - 协议类型：响应客户端的登陆
          */

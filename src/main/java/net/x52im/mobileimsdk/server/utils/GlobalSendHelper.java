@@ -29,10 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GlobalSendHelper {
-    private static Logger logger = LoggerFactory.getLogger(ServerCoreHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServerCoreHandler.class);
 
-    public static void sendDataC2C(final BridgeProcessor bridgeProcessor
-            , final Channel session, final Protocal pFromClient, final String remoteAddress
+    public static void sendDataC2C(final BridgeProcessor bridgeProcessor, final Channel session, final Protocal pFromClient, final String remoteAddress
             , final ServerCoreHandler serverCoreHandler) throws Exception {
         // TODO just for DEBUG
         OnlineProcessor.getInstance().__printOnline();
@@ -74,13 +73,10 @@ public class GlobalSendHelper {
             }
 
             if (needDelegateACK) {
-                MBObserver resultObserver = new MBObserver() {
-                    @Override
-                    public void update(boolean receivedBackSendSucess, Object extraObj) {
-                        if (receivedBackSendSucess) {
-                            logger.debug("[IMCORE-{}<C2C>-桥接↑]【QoS_伪应答_C2S】向{}发送{}的伪应答包成功,伪装from自：{}【第一阶段APP+WEB跨机通信算法】."
-                                    , Gateway.$(session), pFromClient.getFrom(), pFromClient.getFp(), pFromClient.getTo());
-                        }
+                MBObserver resultObserver = (receivedBackSendSucess, extraObj) -> {
+                    if (receivedBackSendSucess) {
+                        logger.debug("[IMCORE-{}<C2C>-桥接↑]【QoS_伪应答_C2S】向{}发送{}的伪应答包成功,伪装from自：{}【第一阶段APP+WEB跨机通信算法】."
+                                , Gateway.$(session), pFromClient.getFrom(), pFromClient.getFp(), pFromClient.getTo());
                     }
                 };
 
@@ -89,42 +85,36 @@ public class GlobalSendHelper {
 
             QoS4ReciveDaemonC2S.getInstance().addRecieved(pFromClient);
         } else {
-            MBObserver resultObserver = new MBObserver() {
-                @Override
-                public void update(boolean sendOK, Object extraObj) {
-                    boolean needAck = false;
+            MBObserver resultObserver = (sendOK, extraObj) -> {
+                boolean needAck = false;
 
-                    if (sendOK) {
+                if (sendOK) {
+                    needAck = true;
+                    serverCoreHandler.getServerEventListener().onTransferMessage4C2C(pFromClient);
+                } else {
+                    logger.info("[IMCORE-{}<C2C>]>> 客户端{}的通用数据尝试实时发送没有成功，将交给应用层进行离线存储哦..."
+                            , Gateway.$(session), remoteAddress);
+
+                    boolean offlineProcessedOK = serverCoreHandler.getServerEventListener().onTransferMessage_RealTimeSendFaild(pFromClient);
+                    if (pFromClient.isQoS() && offlineProcessedOK) {
                         needAck = true;
-                        serverCoreHandler.getServerEventListener().onTransferMessage4C2C(pFromClient);
                     } else {
-                        logger.info("[IMCORE-{}<C2C>]>> 客户端{}的通用数据尝试实时发送没有成功，将交给应用层进行离线存储哦..."
-                                , Gateway.$(session), remoteAddress);
-
-                        boolean offlineProcessedOK = serverCoreHandler.getServerEventListener().onTransferMessage_RealTimeSendFaild(pFromClient);
-                        if (pFromClient.isQoS() && offlineProcessedOK) {
-                            needAck = true;
-                        } else {
-                            logger.warn("[IMCORE-{}<C2C>]>> 客户端{}的通用数据传输消息尝试实时发送没有成功，但上层应用层没有成功(或者完全没有)进行离线存储，此消息已被服务端丢弃！", Gateway.$(session), remoteAddress);
-                        }
+                        logger.warn("[IMCORE-{}<C2C>]>> 客户端{}的通用数据传输消息尝试实时发送没有成功，但上层应用层没有成功(或者完全没有)进行离线存储，此消息已被服务端丢弃！", Gateway.$(session), remoteAddress);
                     }
+                }
 
-                    if (needAck) {
-                        try {
-                            MBObserver retObserver = new MBObserver() {
-                                @Override
-                                public void update(boolean sucess, Object extraObj) {
-                                    if (sucess) {
-                                        logger.debug("[IMCORE-{}<C2C>]【QoS_伪应答_C2S】向{}发送{}的应答包成功,from={}."
-                                                , Gateway.$(session), pFromClient.getFrom(), pFromClient.getFp(), pFromClient.getTo());
-                                    }
-                                }
-                            };
+                if (needAck) {
+                    try {
+                        MBObserver retObserver = (sucess, extraObj1) -> {
+                            if (sucess) {
+                                logger.debug("[IMCORE-{}<C2C>]【QoS_伪应答_C2S】向{}发送{}的应答包成功,from={}."
+                                        , Gateway.$(session), pFromClient.getFrom(), pFromClient.getFp(), pFromClient.getTo());
+                            }
+                        };
 
-                            LocalSendHelper.replyRecievedBack(session, pFromClient, retObserver);
-                        } catch (Exception e) {
-                            logger.warn(e.getMessage(), e);
-                        }
+                        LocalSendHelper.replyRecievedBack(session, pFromClient, retObserver);
+                    } catch (Exception e) {
+                        logger.warn(e.getMessage(), e);
                     }
                 }
             };
@@ -156,26 +146,24 @@ public class GlobalSendHelper {
 
             }
         } else {
-            LocalSendHelper.sendData(pFromClient, new MBObserver() {
-                @Override
-                public void update(boolean _sendSucess, Object extraObj) {
-                    if (_sendSucess)
-                        _sendSucess = true;
-                    else {
-                        logger.warn("[IMCORE]>> 服务端的通用数据传输消息尝试实时发送没有成功，但上层应用层没有成功，请应用层自行决定此条消息的发送【NO】！");
-                    }
+            LocalSendHelper.sendData(pFromClient, (_sendSucess, extraObj) -> {
+                if (_sendSucess) {
+                    _sendSucess = true;
+                } else {
+                    logger.warn("[IMCORE]>> 服务端的通用数据传输消息尝试实时发送没有成功，但上层应用层没有成功，请应用层自行决定此条消息的发送【NO】！");
+                }
 
-                    if (resultObserver != null) {
-                        resultObserver.update(_sendSucess, null);
-                    }
+                if (resultObserver != null) {
+                    resultObserver.update(_sendSucess, null);
                 }
             });
 
             return;
         }
 
-        if (resultObserver != null)
+        if (resultObserver != null) {
             resultObserver.update(sucess, null);
+        }
 
     }
 }

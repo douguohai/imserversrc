@@ -21,14 +21,52 @@ import com.google.gson.Gson;
 import java.util.UUID;
 
 public class Protocal {
+
+    /**
+     * 是否来自跨服务器的消息，true表示是、否则不是。
+     */
     protected boolean bridge = false;
+
+    /**
+     * 协议类型。
+     */
     protected int type = 0;
+
+    /**
+     * 传输的数据详情
+     */
     protected String dataContent = null;
+
+    /**
+     * 消息发出方的id
+     * 说明：为“-1”表示未设定、为“0”表示来自Server。
+     */
     protected String from = "-1";
+
+    /**
+     * 消息接收方的id（当用户退出时，此值可不设置）
+     * 说明：为“-1”表示未设定、为“0”表示发给Server。
+     */
     protected String to = "-1";
+
+    /**
+     * 用于QoS消息包的质量保证时作为消息的指纹特征码,这里用uuid来实现的
+     */
     protected String fp = null;
+
+    /**
+     * true表示本包需要进行QoS质量保证，否则不需要.
+     */
     protected boolean QoS = false;
+
+    /**
+     * 应用层专用字段——用于应用层存放聊天、推送等场景下的消息类型。
+     */
     protected int typeu = -1;
+
+    /**
+     * 本字段仅用于客户端QoS时：表示丢包重试次数
+     */
     protected transient int retryCount = 0;
 
     public Protocal(int type, String dataContent, String from, String to) {
@@ -39,13 +77,11 @@ public class Protocal {
         this(type, dataContent, from, to, false, null, typeu);
     }
 
-    public Protocal(int type, String dataContent, String from, String to
-            , boolean QoS, String fingerPrint) {
+    public Protocal(int type, String dataContent, String from, String to, boolean QoS, String fingerPrint) {
         this(type, dataContent, from, to, QoS, fingerPrint, -1);
     }
 
-    public Protocal(int type, String dataContent, String from, String to
-            , boolean QoS, String fingerPrint, int typeu) {
+    public Protocal(int type, String dataContent, String from, String to, boolean QoS, String fingerPrint, int typeu) {
         this.type = type;
         this.dataContent = dataContent;
         this.from = from;
@@ -53,10 +89,11 @@ public class Protocal {
         this.QoS = QoS;
         this.typeu = typeu;
 
-        if (QoS && fingerPrint == null)
+        if (QoS && fingerPrint == null) {
             fp = Protocal.genFingerPrint();
-        else
+        } else {
             fp = fingerPrint;
+        }
     }
 
     public int getType() {
@@ -139,8 +176,10 @@ public class Protocal {
     public Object clone() {
         Protocal cloneP = new Protocal(this.getType()
                 , this.getDataContent(), this.getFrom(), this.getTo(), this.isQoS(), this.getFp());
-        cloneP.setBridge(this.bridge); // since 3.0
-        cloneP.setTypeu(this.typeu);   // since 3.0
+        // since 3.0
+        cloneP.setBridge(this.bridge);
+        // since 3.0
+        cloneP.setTypeu(this.typeu);
         return cloneP;
     }
 
