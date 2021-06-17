@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public abstract class ServerLauncher {
-    private static Logger logger = LoggerFactory.getLogger(ServerLauncher.class);
+    private static final Logger logger = LoggerFactory.getLogger(ServerLauncher.class);
 
     public static boolean debug = true;
     /**

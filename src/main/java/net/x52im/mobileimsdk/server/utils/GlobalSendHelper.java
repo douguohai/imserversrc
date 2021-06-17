@@ -91,8 +91,7 @@ public class GlobalSendHelper {
                     needAck = true;
                     serverCoreHandler.getServerEventListener().onTransferMessage4C2C(pFromClient);
                 } else {
-                    logger.info("[IMCORE-{}<C2C>]>> 客户端{}的通用数据尝试实时发送没有成功，将交给应用层进行离线存储哦..."
-                            , Gateway.$(session), remoteAddress);
+                    logger.info("[IMCORE-{}<C2C>]>> 客户端{}的通用数据尝试实时发送没有成功，将交给应用层进行离线存储哦...", Gateway.$(session), remoteAddress);
 
                     boolean offlineProcessedOK = serverCoreHandler.getServerEventListener().onTransferMessage_RealTimeSendFaild(pFromClient);
                     if (pFromClient.isQoS() && offlineProcessedOK) {
