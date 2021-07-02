@@ -4,7 +4,6 @@ import net.x52im.mobileimsdk.server.protocal.Protocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
@@ -40,7 +39,7 @@ public class QoS4ReciveDaemonRoot {
     /**
      * 是否在执行
      */
-    private boolean _excuting = false;
+    private boolean excuting = false;
 
     /**
      * debug 标记
@@ -70,17 +69,15 @@ public class QoS4ReciveDaemonRoot {
      * 执行任务
      */
     private void doTaskOnece() {
-        if (!_excuting) {
-            _excuting = true;
+        if (!excuting) {
+            excuting = true;
 
             if (DEBUG) {
                 logger.debug("【IMCORE" + this.debugTag + "】【QoS接收方】+++++ START 暂存处理线程正在运行中，当前长度" + recievedMessages.size() + ".");
             }
 
             //** 遍历HashMap方法二（在大数据量情况下，方法二的性能要5倍优于方法一）
-            Iterator<Entry<String, Long>> entryIt = recievedMessages.entrySet().iterator();
-            while (entryIt.hasNext()) {
-                Entry<String, Long> entry = entryIt.next();
+            for (Entry<String, Long> entry : recievedMessages.entrySet()) {
                 String key = entry.getKey();
                 long value = entry.getValue();
 
@@ -99,7 +96,7 @@ public class QoS4ReciveDaemonRoot {
         }
 
         //
-        _excuting = false;
+        excuting = false;
     }
 
     public void startup() {

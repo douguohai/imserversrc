@@ -52,7 +52,7 @@ public class QoS4SendDaemonRoot {
     /**
      * 服务的助兴状态 true 在执行 false 不在执行
      */
-    private boolean _excuting = false;
+    private boolean excuting = false;
 
     private String debugTag = "";
 
@@ -83,9 +83,9 @@ public class QoS4SendDaemonRoot {
     }
 
     private void doTaskOnece() {
-        if (!_excuting) {
+        if (!excuting) {
             ArrayList<Protocal> lostMessages = new ArrayList<>();
-            _excuting = true;
+            excuting = true;
             try {
                 if (DEBUG && sentMessages.size() > 0) {
                     logger.debug("【IMCORE" + this.debugTag + "】【QoS发送方】====== 消息发送质量保证线程运行中, 当前需要处理的列表长度为" + sentMessages.size() + "...");
@@ -151,7 +151,7 @@ public class QoS4SendDaemonRoot {
                 notifyMessageLost(lostMessages);
             }
 
-            _excuting = false;
+            excuting = false;
         }
     }
 
