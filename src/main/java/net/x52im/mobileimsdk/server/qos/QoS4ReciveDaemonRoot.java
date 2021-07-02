@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2020  即时通讯网(52im.net) & Jack Jiang.
- * The MobileIMSDK v5.x Project.
- * All rights reserved.
- *
- * > Github地址：https://github.com/JackJiang2011/MobileIMSDK
- * > 文档地址：  http://www.52im.net/forum-89-1.html
- * > 技术社区：  http://www.52im.net/
- * > 技术交流群：320837163 (http://www.52im.net/topic-qqgroup.html)
- * > 作者公众号：“【即时通讯技术圈】”，欢迎关注！
- * > 联系作者：  http://www.52im.net/thread-2792-1-1.html
- *
- * "即时通讯网(52im.net) - 即时通讯开发者社区!" 推荐开源工程。
- *
- * QoS4ReciveDaemonRoot.java at 2020-8-22 16:00:59, code by Jack Jiang.
- */
 package net.x52im.mobileimsdk.server.qos;
 
 import net.x52im.mobileimsdk.server.protocal.Protocal;
@@ -22,24 +6,23 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 public class QoS4ReciveDaemonRoot {
+
     private static Logger logger = LoggerFactory.getLogger(QoS4ReciveDaemonRoot.class);
 
     private boolean DEBUG = false;
+
     /**
      * 定时检查时间5分钟
      */
     private int CHECH_INTERVAL = 5 * 60 * 1000;
 
     /**
-     *
+     * 10分钟
      */
-    private int MESSAGES_VALID_TIME = 10 * 60 * 1000; // 10分钟
+    private int MESSAGES_VALID_TIME = 10 * 60 * 1000;
 
     /**
      *
@@ -49,7 +32,7 @@ public class QoS4ReciveDaemonRoot {
     /**
      * 定时器
      */
-    private Timer timer = null;
+    private ScheduledExecutorService scheduledExecutorService;
 
 
     private Runnable runnable = null;
@@ -126,30 +109,22 @@ public class QoS4ReciveDaemonRoot {
                 putImpl(key);
             }
         }
-
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-                                      @Override
-                                      public void run() {
-                                          doTaskOnece();
-                                      }
-                                  }
-                , CHECH_INTERVAL
-                , CHECH_INTERVAL);
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleAtFixedRate(this::doTaskOnece, CHECH_INTERVAL, CHECH_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     public void stop() {
-        if (timer != null) {
+        if (null != scheduledExecutorService) {
             try {
-                timer.cancel();
+                scheduledExecutorService.shutdown();
             } finally {
-                timer = null;
+                scheduledExecutorService = null;
             }
         }
     }
 
     public boolean isRunning() {
-        return timer != null;
+        return scheduledExecutorService != null;
     }
 
     public void addRecieved(Protocal p) {

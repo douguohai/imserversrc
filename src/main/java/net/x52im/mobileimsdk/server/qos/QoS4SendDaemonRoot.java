@@ -10,17 +10,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.*;
 
 /**
  * S2C模式中QoS数据包质量包证机制之发送队列保证实现类.
  * 本类是QoS机制的核心，目的是加强保证TCP协议在应用层的可靠性和送达率。
  */
 public class QoS4SendDaemonRoot {
+
     private static Logger logger = LoggerFactory.getLogger(QoS4SendDaemonRoot.class);
 
     private boolean DEBUG = false;
@@ -30,12 +27,12 @@ public class QoS4SendDaemonRoot {
     /**
      * 待发送的消息集合
      */
-    private ConcurrentSkipListMap<String, Protocal> sentMessages = new ConcurrentSkipListMap<String, Protocal>();
+    private ConcurrentSkipListMap<String, Protocal> sentMessages = new ConcurrentSkipListMap<>();
 
     /**
      * 消息的唯一id和服务端接收到当前消息的时间映射
      */
-    private ConcurrentMap<String, Long> sendMessagesTimestamp = new ConcurrentHashMap<String, Long>();
+    private ConcurrentMap<String, Long> sendMessagesTimestamp = new ConcurrentHashMap<>();
 
     /**
      * 检查间隔
@@ -56,8 +53,11 @@ public class QoS4SendDaemonRoot {
      * 服务的助兴状态 true 在执行 false 不在执行
      */
     private boolean _excuting = false;
-    private Timer timer = null;
+
     private String debugTag = "";
+
+    private ScheduledExecutorService scheduledExecutorService;
+
 
     /**
      * 构造函数
@@ -84,7 +84,7 @@ public class QoS4SendDaemonRoot {
 
     private void doTaskOnece() {
         if (!_excuting) {
-            ArrayList<Protocal> lostMessages = new ArrayList<Protocal>();
+            ArrayList<Protocal> lostMessages = new ArrayList<>();
             _excuting = true;
             try {
                 if (DEBUG && sentMessages.size() > 0) {
@@ -175,16 +175,8 @@ public class QoS4SendDaemonRoot {
      */
     public QoS4SendDaemonRoot startup(boolean immediately) {
         stop();
-
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-                                      @Override
-                                      public void run() {
-                                          doTaskOnece();
-                                      }
-                                  }
-                , immediately ? 0 : CHECH_INTERVAL
-                , CHECH_INTERVAL);
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleAtFixedRate(this::doTaskOnece, immediately ? 0 : CHECH_INTERVAL, CHECH_INTERVAL, TimeUnit.MILLISECONDS);
 
         logger.debug("【IMCORE" + this.debugTag + "】【QoS发送方】====== 消息发送质量保证线程已成功启动");
 
@@ -196,11 +188,11 @@ public class QoS4SendDaemonRoot {
      * 停止当前服务
      */
     public void stop() {
-        if (timer != null) {
+        if (null != scheduledExecutorService) {
             try {
-                timer.cancel();
+                scheduledExecutorService.shutdown();
             } finally {
-                timer = null;
+                scheduledExecutorService = null;
             }
         }
     }
@@ -211,7 +203,7 @@ public class QoS4SendDaemonRoot {
      * @return true 在运行 false 不在运行
      */
     public boolean isRunning() {
-        return timer != null;
+        return scheduledExecutorService != null;
     }
 
 

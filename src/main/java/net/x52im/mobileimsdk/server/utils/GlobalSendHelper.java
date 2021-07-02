@@ -18,7 +18,7 @@ public class GlobalSendHelper {
     public static void sendDataC2C(final BridgeProcessor bridgeProcessor, final Channel session, final Protocal pFromClient, final String remoteAddress
             , final ServerCoreHandler serverCoreHandler) throws Exception {
         // TODO just for DEBUG
-        OnlineProcessor.getInstance().__printOnline();
+        OnlineProcessor.getInstance().printOnline();
 
         boolean needDelegateACK = false;
         if (ServerLauncher.bridgeEnabled && !OnlineProcessor.isOnline(pFromClient.getTo())) {
@@ -108,7 +108,7 @@ public class GlobalSendHelper {
     public static void sendDataS2C(BridgeProcessor bridgeProcessor, Protocal pFromClient
             , final MBObserver resultObserver) throws Exception {
         // TODO just for DEBUG
-        OnlineProcessor.getInstance().__printOnline();
+        OnlineProcessor.getInstance().printOnline();
 
         boolean sucess = false;
 
