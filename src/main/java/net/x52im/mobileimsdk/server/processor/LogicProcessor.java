@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2020  即时通讯网(52im.net) & Jack Jiang.
- * The MobileIMSDK v5.x Project.
- * All rights reserved.
- *
- * > Github地址：https://github.com/JackJiang2011/MobileIMSDK
- * > 文档地址：  http://www.52im.net/forum-89-1.html
- * > 技术社区：  http://www.52im.net/
- * > 技术交流群：320837163 (http://www.52im.net/topic-qqgroup.html)
- * > 作者公众号：“【即时通讯技术圈】”，欢迎关注！
- * > 联系作者：  http://www.52im.net/thread-2792-1-1.html
- *
- * "即时通讯网(52im.net) - 即时通讯开发者社区!" 推荐开源工程。
- *
- * LogicProcessor.java at 2020-8-22 16:00:59, code by Jack Jiang.
- */
 package net.x52im.mobileimsdk.server.processor;
 
 import io.netty.channel.Channel;
@@ -32,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LogicProcessor {
+
     private static Logger logger = LoggerFactory.getLogger(LogicProcessor.class);
 
     private ServerCoreHandler serverCoreHandler = null;
@@ -43,10 +28,10 @@ public class LogicProcessor {
     /**
      * 处理c2c发送消息
      *
-     * @param bridgeProcessor
-     * @param session
-     * @param pFromClient
-     * @param remoteAddress
+     * @param bridgeProcessor 桥接服务实例对象
+     * @param session         netty 会话
+     * @param pFromClient     消息
+     * @param remoteAddress   客户端远程地址
      * @throws Exception
      */
     public void processC2CMessage(BridgeProcessor bridgeProcessor, Channel session, Protocal pFromClient, String remoteAddress) throws Exception {
@@ -56,9 +41,9 @@ public class LogicProcessor {
     /**
      * 处理客户端发送消息到服务端的逻辑
      *
-     * @param session
-     * @param pFromClient
-     * @param remoteAddress
+     * @param session       etty 会话
+     * @param pFromClient   消息
+     * @param remoteAddress 客户端远程地址
      * @throws Exception
      */
     public void processC2SMessage(Channel session, final Protocal pFromClient, String remoteAddress) throws Exception {
@@ -66,9 +51,7 @@ public class LogicProcessor {
         if (pFromClient.isQoS()) {
             boolean hasRecieved = QoS4ReciveDaemonC2S.getInstance().hasRecieved(pFromClient.getFp());
             QoS4ReciveDaemonC2S.getInstance().addRecieved(pFromClient);
-            LocalSendHelper.replyRecievedBack(session
-                    , pFromClient
-                    , (receivedBackSendSucess, extraObj) -> {
+            LocalSendHelper.replyRecievedBack(session, pFromClient, (receivedBackSendSucess, extraObj) -> {
                         if (receivedBackSendSucess) {
                             logger.debug("[IMCORE-本机QoS！]【QoS_应答_C2S】向" + pFromClient.getFrom() + "发送" + pFromClient.getFp()
                                     + "的应答包成功了,from=" + pFromClient.getTo() + ".");
@@ -80,7 +63,6 @@ public class LogicProcessor {
                 if (QoS4ReciveDaemonC2S.getInstance().isDebugable()) {
                     logger.debug("[IMCORE-本机QoS！]【QoS机制】" + pFromClient.getFp() + "因已经存在于发送列表中，这是重复包，本次忽略通知业务处理层（只需要回复ACK就行了）！");
                 }
-
                 return;
             }
         }
@@ -136,8 +118,8 @@ public class LogicProcessor {
             if (alreadyLogined) {
                 logger.debug("[IMCORE-{}]>> 【注意】客户端{}的会话正常且已经登陆过，而此时又重新登陆：getLoginName={}|getLoginPsw={}", Gateway.$(session), remoteAddress, loginInfo.getLoginUserId(), loginInfo.getLoginToken());
 
-                MBObserver retObserver = (_sendOK, extraObj) -> {
-                    if (_sendOK) {
+                MBObserver retObserver = (sendOk, extraObj) -> {
+                    if (sendOk) {
                         session.attr(OnlineProcessor.USER_ID_IN_SESSION_ATTRIBUTE_ATTR).set(loginInfo.getLoginUserId());
                         OnlineProcessor.getInstance().putUser(loginInfo.getLoginUserId(), session);
                         serverCoreHandler.getServerEventListener().onUserLoginSucess(loginInfo.getLoginUserId(), loginInfo.getExtra(), session);
@@ -151,8 +133,8 @@ public class LogicProcessor {
                 //判断是否允许当前用户登陆
                 int code = serverCoreHandler.getServerEventListener().onUserLoginVerify(loginInfo.getLoginUserId(), loginInfo.getLoginToken(), loginInfo.getExtra(), session);
                 if (code == 0) {
-                    MBObserver sendResultObserver = (__sendOK, extraObj) -> {
-                        if (__sendOK) {
+                    MBObserver sendResultObserver = (sendOk, extraObj) -> {
+                        if (sendOk) {
                             session.attr(OnlineProcessor.USER_ID_IN_SESSION_ATTRIBUTE_ATTR).set(loginInfo.getLoginUserId());
                             OnlineProcessor.getInstance().putUser(loginInfo.getLoginUserId(), session);
                             serverCoreHandler.getServerEventListener().onUserLoginSucess(loginInfo.getLoginUserId(), loginInfo.getExtra(), session);
@@ -179,9 +161,9 @@ public class LogicProcessor {
     /**
      * 处理心跳包逻辑
      *
-     * @param session
-     * @param pFromClient
-     * @param remoteAddress
+     * @param session       netty的会话
+     * @param pFromClient   传输的消息
+     * @param remoteAddress 客户端ip
      * @throws Exception
      */
     public void processKeepAlive(Channel session, Protocal pFromClient, String remoteAddress) throws Exception {

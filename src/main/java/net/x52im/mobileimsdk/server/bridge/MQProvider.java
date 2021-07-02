@@ -243,9 +243,7 @@ public class MQProvider {
         boolean ok = false;
 
         try {
-            _pubChannel.basicPublish(exchangeName, routingKey
-                    , MessageProperties.PERSISTENT_TEXT_PLAIN
-                    , message.getBytes(this.encodeCharset));
+            _pubChannel.basicPublish(exchangeName, routingKey, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes(this.encodeCharset));
             logger.info("[" + TAG + "-↑] - [startPublisher()中] publish()成功了 ！(数据:"
                     + exchangeName + "," + routingKey + "," + message + ")");
             ok = true;

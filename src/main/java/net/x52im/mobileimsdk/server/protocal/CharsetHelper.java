@@ -45,7 +45,8 @@ public class CharsetHelper {
             } catch (UnsupportedEncodingException e) {
                 return str.getBytes();
             }
-        } else
+        } else {
             return new byte[0];
+        }
     }
 }

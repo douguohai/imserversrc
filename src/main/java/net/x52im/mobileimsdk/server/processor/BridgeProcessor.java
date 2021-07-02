@@ -54,8 +54,7 @@ public abstract class BridgeProcessor extends MQProvider {
                 public void update(boolean sendOK, Object extraObj) {
                     if (sendOK) {
                         realtimeC2CSuccessCallback(p);
-                        logger.info("[IMCORE-桥接↓] - " + p.getFrom() + "发给" + p.getTo()
-                                + "的指纹为" + p.getFp() + "的消息转发成功！【第一阶段APP+WEB跨机通信算法】");
+                        logger.info("[IMCORE-桥接↓] - " + p.getFrom() + "发给" + p.getTo() + "的指纹为" + p.getFp() + "的消息转发成功！【第一阶段APP+WEB跨机通信算法】");
 
                     } else {
                         logger.info("[IMCORE-桥接↓]>> 客户端" + p.getFrom() + "发送给" + p.getTo() + "的桥接数据尝试实时发送没有成功("
