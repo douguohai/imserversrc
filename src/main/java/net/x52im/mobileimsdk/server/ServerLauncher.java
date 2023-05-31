@@ -71,7 +71,9 @@ public abstract class ServerLauncher {
             serverCoreHandler = initServerCoreHandler();
             initListeners();
             initGateways();
+            //接收消息进程
             QoS4ReciveDaemonC2S.getInstance().startup();
+            //接收消息进程
             QoS4SendDaemonS2C.getInstance().startup(true).setServerLauncher(this);
 
             if (ServerLauncher.bridgeEnabled) {

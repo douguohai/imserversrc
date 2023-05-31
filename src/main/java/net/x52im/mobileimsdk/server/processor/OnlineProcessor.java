@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * 在线用户处理
+ * @author tianwen
  */
 public class OnlineProcessor {
 
