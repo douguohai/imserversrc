@@ -16,6 +16,7 @@
  */
 package net.x52im.mobileimsdk.server;
 
+import lombok.extern.slf4j.Slf4j;
 import net.x52im.mobileimsdk.server.event.MessageQoSEventListenerS2C;
 import net.x52im.mobileimsdk.server.event.ServerEventListener;
 import net.x52im.mobileimsdk.server.network.Gateway;
@@ -23,23 +24,20 @@ import net.x52im.mobileimsdk.server.network.GatewayTCP;
 import net.x52im.mobileimsdk.server.network.GatewayUDP;
 import net.x52im.mobileimsdk.server.qos.QoS4ReciveDaemonC2S;
 import net.x52im.mobileimsdk.server.qos.QoS4SendDaemonS2C;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+@Slf4j
 public abstract class ServerLauncher {
-    private static final Logger logger = LoggerFactory.getLogger(ServerLauncher.class);
 
     public static boolean debug = true;
-    /**
-     * @deprecated
-     */
-    public static String appKey = null;
+
     public static boolean bridgeEnabled = false;
+
     public static int supportedGateways = 0;
 
     protected ServerCoreHandler serverCoreHandler = null;
+
     private boolean running = false;
 
     private Gateway udp = null;
@@ -56,11 +54,12 @@ public abstract class ServerLauncher {
     protected abstract void initListeners();
 
     protected void initGateways() {
+        //开启udp端口监听
         if (Gateway.isSupportUDP(supportedGateways)) {
             udp = new GatewayUDP();
             udp.init(this.serverCoreHandler);
         }
-
+        //开启tcp端口监听
         if (Gateway.isSupportTCP(supportedGateways)) {
             tcp = new GatewayTCP();
             tcp.init(this.serverCoreHandler);
@@ -79,15 +78,15 @@ public abstract class ServerLauncher {
 //    			QoS4ReciveDaemonC2B.getInstance().startup();
 //    			QoS4SendDaemonB2C.getInstance().startup(true).setServerLauncher(this);
                 serverCoreHandler.lazyStartupBridgeProcessor();
-                logger.info("[IMCORE-tcp] 配置项：已开启与MobileIMSDK Web的互通.");
+                log.info("[IMCORE-tcp] 配置项：已开启与MobileIMSDK Web的互通.");
             } else {
-                logger.info("[IMCORE-tcp] 配置项：未开启与MobileIMSDK Web的互通.");
+                log.info("[IMCORE-tcp] 配置项：未开启与MobileIMSDK Web的互通.");
             }
 
             bind();
             this.running = true;
         } else {
-            logger.warn("[IMCORE-tcp] 基于MobileIMSDK的TCP服务正在运行中，本次startup()失败，请先调用shutdown()后再试！");
+            log.warn("[IMCORE-tcp] 基于MobileIMSDK的TCP服务正在运行中，本次startup()失败，请先调用shutdown()后再试！");
         }
     }
 
@@ -142,8 +141,4 @@ public abstract class ServerLauncher {
         return running;
     }
 
-//	public static void main(String[] args) throws IOException
-//    {
-//        new ServerLauncher().startup();
-//    }
 }

@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory;
 public class GatewayTCP extends Gateway {
     private static Logger logger = LoggerFactory.getLogger(GatewayTCP.class);
 
+    /**
+     * tcp 监听端口
+     */
     public static int PORT = 8901;
     public static int SESION_RECYCLER_EXPIRE = 20;//10;
     public static int TCP_FRAME_FIXED_HEADER_LENGTH = 4;     // 4 bytes
