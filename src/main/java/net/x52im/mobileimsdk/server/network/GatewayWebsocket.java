@@ -16,6 +16,89 @@
  */
 package net.x52im.mobileimsdk.server.network;
 
-public class GatewayWebsocket {
-    // 以后再实现 。。。。
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import lombok.extern.slf4j.Slf4j;
+import net.x52im.mobileimsdk.server.ServerCoreHandler;
+import net.x52im.mobileimsdk.server.network.udp.MBUDPClientInboundHandler;
+
+/**
+ * @author tianwen
+ */
+@Slf4j
+public class GatewayWebsocket extends Gateway {
+
+    /**
+     * 设置端口
+     */
+    public static int PORT = 7901;
+
+    private static final String WEBSOCKET_PATH = "/websocket";
+
+    protected final EventLoopGroup bossGroup = new NioEventLoopGroup();
+
+    protected final EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+    protected Channel __serverChannel4Netty = null;
+
+    protected ServerBootstrap bootstrap = null;
+
+    public static int SESSION_RECYCLER_EXPIRE = 20;
+
+    @Override
+    public void init(ServerCoreHandler serverCoreHandler) {
+        bootstrap = new ServerBootstrap()
+                .group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(initChildChannelHandler(serverCoreHandler));
+    }
+
+    @Override
+    public void bind() throws Exception {
+        ChannelFuture cf = bootstrap.bind(PORT).sync();
+        if (cf.isSuccess()) {
+            log.info("[IMCORE-ws] 基于MobileIMSDK的WebSocket服务绑定端口" + PORT + "成功 √ ");
+        } else {
+            log.info("[IMCORE-ws] 基于MobileIMSDK的WebSocket服务绑定端口" + PORT + "失败 ×");
+        }
+
+        __serverChannel4Netty = cf.channel();
+        __serverChannel4Netty.closeFuture().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+            }
+        });
+
+        log.info("[IMCORE-ws] .... continue ...");
+        log.info("[IMCORE-ws] 基于MobileIMSDK的WebSocket服务正在端口" + PORT + "上监听中...");
+    }
+
+    @Override
+    public void shutdown() {
+        if (__serverChannel4Netty != null) {
+            __serverChannel4Netty.close();
+        }
+    }
+
+    protected ChannelHandler initChildChannelHandler(final ServerCoreHandler serverCoreHandler) {
+        return new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel channel) throws Exception {
+                ChannelPipeline pipeline = channel.pipeline();
+
+                pipeline.addLast(new HttpServerCodec());
+                pipeline.addLast(new HttpObjectAggregator(65536));
+                pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
+                pipeline.addLast(new ReadTimeoutHandler(SESSION_RECYCLER_EXPIRE));
+            }
+        };
+    }
 }

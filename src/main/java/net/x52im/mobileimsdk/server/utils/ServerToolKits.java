@@ -110,6 +110,10 @@ public class ServerToolKits {
         return ProtocalFactory.parse(fromIOBuffer_JSON(buffer), Protocal.class);
     }
 
+    public static Protocal toProtocal(String protocalJSONStr) throws Exception {
+        return ProtocalFactory.parse(protocalJSONStr, Protocal.class);
+    }
+
     /**
      * MobileIMSDK核心框架的TCP协议心跳频率模式.
      * <p>

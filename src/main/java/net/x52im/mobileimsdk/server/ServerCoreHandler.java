@@ -83,11 +83,10 @@ public class ServerCoreHandler {
      * 处理服务端接收到消息逻辑
      *
      * @param session
-     * @param bytebuf
+     * @param pFromClient
      * @throws Exception
      */
-    public void messageReceived(Channel session, ByteBuf bytebuf) throws Exception {
-        Protocal pFromClient = ServerToolKits.fromIOBuffer(bytebuf);
+    public void messageReceived(Channel session, Protocal pFromClient) throws Exception {
         String remoteAddress = ServerToolKits.clientInfoToString(session);
 
         switch (pFromClient.getType()) {

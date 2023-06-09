@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 import net.x52im.mobileimsdk.server.ServerCoreHandler;
+import net.x52im.mobileimsdk.server.protocal.Protocal;
 import net.x52im.mobileimsdk.server.utils.ServerToolKits;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,7 @@ public class MBUDPClientInboundHandler extends SimpleChannelInboundHandler<ByteB
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf bytebuf) throws Exception {
-        serverCoreHandler.messageReceived(ctx.channel(), bytebuf);
+        Protocal pFromClient = ServerToolKits.fromIOBuffer(bytebuf);
+        serverCoreHandler.messageReceived(ctx.channel(), pFromClient);
     }
 }
