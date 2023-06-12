@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import net.x52im.mobileimsdk.server.ServerCoreHandler;
 import net.x52im.mobileimsdk.server.network.Gateway;
 import net.x52im.mobileimsdk.server.network.GatewayUDP;
@@ -65,10 +66,15 @@ public class LocalSendHelper {
         } else {
             if (session.isActive()) {
                 if (p != null) {
-                    final byte[] res = p.toBytes();
-                    //同步进行消息推送
-                    ByteBuf to = Unpooled.copiedBuffer(res);
-                    ChannelFuture cf = session.writeAndFlush(to);//.sync();
+                    Object to = null;
+                    if (Gateway.isWebSocketChannel(session)) {
+                        String res = p.toGsonString();
+                        to = new TextWebSocketFrame(res);
+                    } else {
+                        byte[] res = p.toBytes();
+                        to = Unpooled.copiedBuffer(res);
+                    }
+                    ChannelFuture cf = session.writeAndFlush(to);
 
                     cf.addListener((ChannelFutureListener) future -> {
                         if (future.isSuccess()) {
@@ -76,7 +82,7 @@ public class LocalSendHelper {
                                 QoS4SendDaemonS2C.getInstance().put(p);
                             }
                         } else {
-                            logger.warn("[IMCORE-{}]给客户端：{}的数据->{},发送失败！[{}](此消息应考虑作离线处理哦).", Gateway.$(session), ServerToolKits.clientInfoToString(session), p.toGsonString(), res.length);
+                            logger.warn("[IMCORE-{}]给客户端：{}的数据->{},发送失败！(此消息应考虑作离线处理哦).", Gateway.$(session), ServerToolKits.clientInfoToString(session), p.toGsonString());
                         }
                         if (resultObserver != null) {
                             resultObserver.update(future.isSuccess(), null);

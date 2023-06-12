@@ -137,7 +137,7 @@ public abstract class Gateway {
     }
 
     public static String getGatewayFlag(Channel c) {
-        log.info(">>>>>> c.class=" + c.getClass().getName());
+//        log.info(">>>>>> c.class=" + c.getClass().getName());
         if (isUDPChannel(c)) {
             return "udp";
         } else if (isTCPChannel(c)) {

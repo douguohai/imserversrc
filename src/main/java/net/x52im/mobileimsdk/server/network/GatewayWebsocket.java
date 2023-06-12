@@ -96,7 +96,7 @@ public class GatewayWebsocket extends Gateway {
 
                 pipeline.addLast(new HttpServerCodec());
                 pipeline.addLast(new HttpObjectAggregator(65536));
-                pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
+                pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, false));
                 pipeline.addLast(new ReadTimeoutHandler(SESSION_RECYCLER_EXPIRE));
                 pipeline.addLast(new MBWebsocketClientInboundHandler(serverCoreHandler));
             }
