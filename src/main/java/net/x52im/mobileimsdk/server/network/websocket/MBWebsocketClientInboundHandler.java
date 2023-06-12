@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.timeout.ReadTimeoutException;
 import net.x52im.mobileimsdk.server.ServerCoreHandler;
+import net.x52im.mobileimsdk.server.network.Gateway;
 import net.x52im.mobileimsdk.server.network.tcp.MBTCPClientInboundHandler;
 import net.x52im.mobileimsdk.server.protocal.Protocal;
 import net.x52im.mobileimsdk.server.utils.ServerToolKits;
@@ -50,12 +51,14 @@ public class MBWebsocketClientInboundHandler extends SimpleChannelInboundHandler
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
+        Gateway.setSocketType(ctx.channel(), Gateway.SOCKET_TYPE_WEBSOCKET);
         serverCoreHandler.sessionCreated(ctx.channel());
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
+        Gateway.removeSocketType(ctx.channel());
         serverCoreHandler.sessionClosed(ctx.channel());
     }
 

@@ -26,7 +26,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import net.x52im.mobileimsdk.server.ServerCoreHandler;
-import net.x52im.mobileimsdk.server.network.udp.MBUDPClientInboundHandler;
+import net.x52im.mobileimsdk.server.network.websocket.MBWebsocketClientInboundHandler;
 
 /**
  * @author tianwen
@@ -37,7 +37,7 @@ public class GatewayWebsocket extends Gateway {
     /**
      * 设置端口
      */
-    public static int PORT = 7901;
+    public static int PORT = 9901;
 
     private static final String WEBSOCKET_PATH = "/websocket";
 
@@ -98,6 +98,7 @@ public class GatewayWebsocket extends Gateway {
                 pipeline.addLast(new HttpObjectAggregator(65536));
                 pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
                 pipeline.addLast(new ReadTimeoutHandler(SESSION_RECYCLER_EXPIRE));
+                pipeline.addLast(new MBWebsocketClientInboundHandler(serverCoreHandler));
             }
         };
     }

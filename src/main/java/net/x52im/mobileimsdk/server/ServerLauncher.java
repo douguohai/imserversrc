@@ -22,6 +22,7 @@ import net.x52im.mobileimsdk.server.event.ServerEventListener;
 import net.x52im.mobileimsdk.server.network.Gateway;
 import net.x52im.mobileimsdk.server.network.GatewayTCP;
 import net.x52im.mobileimsdk.server.network.GatewayUDP;
+import net.x52im.mobileimsdk.server.network.GatewayWebsocket;
 import net.x52im.mobileimsdk.server.qos.QoS4ReciveDaemonC2S;
 import net.x52im.mobileimsdk.server.qos.QoS4SendDaemonS2C;
 
@@ -34,14 +35,14 @@ public abstract class ServerLauncher {
 
     public static boolean bridgeEnabled = false;
 
-    public static int supportedGateways = 0;
-
     protected ServerCoreHandler serverCoreHandler = null;
 
     private boolean running = false;
 
     private Gateway udp = null;
     private Gateway tcp = null;
+
+    private Gateway ws = null;
 
     public ServerLauncher() throws IOException {
         // default do nothing
@@ -55,14 +56,20 @@ public abstract class ServerLauncher {
 
     protected void initGateways() {
         //开启udp端口监听
-        if (Gateway.isSupportUDP(supportedGateways)) {
+        if (Gateway.SUPPORT_SOCKET_TYPE_UDP) {
             udp = new GatewayUDP();
             udp.init(this.serverCoreHandler);
         }
         //开启tcp端口监听
-        if (Gateway.isSupportTCP(supportedGateways)) {
+        if (Gateway.SUPPORT_SOCKET_TYPE_TCP) {
             tcp = new GatewayTCP();
             tcp.init(this.serverCoreHandler);
+        }
+
+        //开启websocket端口监听
+        if (Gateway.SUPPORT_SOCKET_TYPE_WEBSOCKET) {
+            ws = new GatewayWebsocket();
+            ws.init(this.serverCoreHandler);
         }
     }
 
@@ -99,6 +106,9 @@ public abstract class ServerLauncher {
         if (tcp != null) {
             tcp.bind();
         }
+        if (ws != null) {
+            ws.bind();
+        }
     }
 
     public void shutdown() {
@@ -107,6 +117,10 @@ public abstract class ServerLauncher {
         }
         if (tcp != null) {
             tcp.shutdown();
+        }
+
+        if (ws != null) {
+            ws.shutdown();
         }
 
         QoS4ReciveDaemonC2S.getInstance().stop();

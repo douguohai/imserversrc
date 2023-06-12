@@ -21,6 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 import net.x52im.mobileimsdk.server.ServerCoreHandler;
+import net.x52im.mobileimsdk.server.network.Gateway;
 import net.x52im.mobileimsdk.server.protocal.Protocal;
 import net.x52im.mobileimsdk.server.utils.ServerToolKits;
 import org.slf4j.Logger;
@@ -55,12 +56,14 @@ public class MBTCPClientInboundHandler extends SimpleChannelInboundHandler<ByteB
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
+        Gateway.setSocketType(ctx.channel(), Gateway.SOCKET_TYPE_TCP);
         serverCoreHandler.sessionCreated(ctx.channel());
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
+        Gateway.removeSocketType(ctx.channel());
         serverCoreHandler.sessionClosed(ctx.channel());
     }
 

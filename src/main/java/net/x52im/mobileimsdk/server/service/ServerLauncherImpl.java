@@ -34,7 +34,6 @@ public class ServerLauncherImpl extends ServerLauncher {
         // 设置MobileIMSDK服务端仅支持TCP协议
 //        ServerLauncher.supportedGateways = Gateway.SUPPORT_TCP;
         // 设置MobileIMSDK服务端同时支持UDP、TCP两种协议
-        ServerLauncher.supportedGateways = Gateway.SUPPORT_UDP | Gateway.SUPPORT_TCP;
 
         // 开/关Demog日志的输出
         QoS4SendDaemonS2C.getInstance().setDebugable(true);
